@@ -2793,5 +2793,45 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2017102100.01);
     }
 
+    if ($oldversion < 2017110100.01) {
+
+        // Define table role_allow_view to be created.
+        $table = new xmldb_table('role_allow_view');
+
+        // Adding fields to table role_allow_view.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('roleid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('allowview', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+
+        // Adding keys to table role_allow_view.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_key('roleid', XMLDB_KEY_FOREIGN, array('roleid'), 'role', array('id'));
+        $table->add_key('allowview', XMLDB_KEY_FOREIGN, array('allowview'), 'role', array('id'));
+
+        // Conditionally launch create table for role_allow_view.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        $index = new xmldb_index('roleid-allowview', XMLDB_INDEX_UNIQUE, array('roleid', 'allowview'));
+
+        // Conditionally launch add index roleid.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        $roles = get_all_roles();
+
+        $DB->delete_records('role_allow_view');
+        foreach ($roles as $role) {
+            foreach ($roles as $allowedrole) {
+                allow_view_role($role->id, $allowedrole->id);
+            }
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2017110100.01);
+    }
+
     return true;
 }

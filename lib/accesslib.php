@@ -1976,7 +1976,7 @@ function get_default_capabilities($archetype) {
  * Return default roles that can be assigned, overridden or switched
  * by give role archetype.
  *
- * @param string $type  assign|override|switch
+ * @param string $type  assign|override|switch|view
  * @param string $archetype
  * @return array of role ids
  */
@@ -2022,6 +2022,16 @@ function get_default_role_archetype_allows($type, $archetype) {
             'editingteacher' => array('teacher', 'student', 'guest'),
             'teacher'        => array('student', 'guest'),
             'student'        => array(),
+            'guest'          => array(),
+            'user'           => array(),
+            'frontpage'      => array(),
+        ),
+        'view' => array(
+            'manager'        => array('manager', 'coursecreator', 'editingteacher', 'teacher', 'student', 'guest', 'user', 'frontpage'),
+            'coursecreator'  => array('coursecreator', 'editingteacher', 'teacher', 'student'),
+            'editingteacher' => array('coursecreator', 'editingteacher', 'teacher', 'student'),
+            'teacher'        => array('coursecreator', 'editingteacher', 'teacher', 'student'),
+            'student'        => array('coursecreator', 'editingteacher', 'teacher', 'student'),
             'guest'          => array(),
             'user'           => array(),
             'frontpage'      => array(),
@@ -2594,10 +2604,13 @@ function get_user_roles_in_course($userid, $courseid) {
     $rolestring = '';
 
     if ($roles = $DB->get_records_sql($sql, $params)) {
-        $rolenames = role_fix_names($roles, $context, ROLENAME_ALIAS, true);   // Substitute aliases
+        $viewableroles = get_viewable_roles($context);
 
-        foreach ($rolenames as $roleid => $rolename) {
-            $rolenames[$roleid] = '<a href="'.$CFG->wwwroot.'/user/index.php?contextid='.$context->id.'&amp;roleid='.$roleid.'">'.$rolename.'</a>';
+        $rolenames = array();
+        foreach ($roles as $roleid => $unused) {
+            if (isset($viewableroles[$roleid])) {
+                $rolenames[] = '<a href="' . $CFG->wwwroot . '/user/index.php?contextid=' . $context->id . '&amp;roleid=' . $roleid . '">' . $viewableroles[$roleid] . '</a>';
+            }
         }
         $rolestring = implode(',', $rolenames);
     }
@@ -2876,6 +2889,22 @@ function allow_switch($fromroleid, $targetroleid) {
 }
 
 /**
+ * Creates a record in the role_allow_view table
+ *
+ * @param int $fromroleid source roleid
+ * @param int $targetroleid target roleid
+ * @return void
+ */
+function allow_view_role($fromroleid, $targetroleid) {
+    global $DB;
+
+    $record = new stdClass();
+    $record->roleid      = $fromroleid;
+    $record->allowview = $targetroleid;
+    $DB->insert_record('role_allow_view', $record);
+}
+
+/**
  * Gets a list of roles that this user can assign in this context
  *
  * @param context $context the context.
@@ -2989,6 +3018,52 @@ function get_switchable_roles(context $context) {
         $contexts = implode(',' , $parents);
 
         $extrajoins = "JOIN {role_allow_switch} ras ON ras.allowswitch = rc.roleid
+        JOIN {role_assignments} ra ON ra.roleid = ras.roleid";
+        $extrawhere = "WHERE ra.userid = :userid AND ra.contextid IN ($contexts)";
+        $params['userid'] = $USER->id;
+    }
+
+    if ($coursecontext = $context->get_course_context(false)) {
+        $params['coursecontext'] = $coursecontext->id;
+    } else {
+        $params['coursecontext'] = 0; // no course aliases
+        $coursecontext = null;
+    }
+
+    $query = "
+        SELECT r.id, r.name, r.shortname, rn.name AS coursealias
+          FROM (SELECT DISTINCT rc.roleid
+                  FROM {role_capabilities} rc
+                  $extrajoins
+                  $extrawhere) idlist
+          JOIN {role} r ON r.id = idlist.roleid
+     LEFT JOIN {role_names} rn ON (rn.contextid = :coursecontext AND rn.roleid = r.id)
+      ORDER BY r.sortorder";
+    $roles = $DB->get_records_sql($query, $params);
+
+    return role_fix_names($roles, $context, ROLENAME_ALIAS, true);
+}
+
+/**
+ * Gets a list of roles that this user can view in a context
+ *
+ * @param context $context a context.
+ * @return array an array $roleid => $rolename.
+ */
+function get_viewable_roles(context $context) {
+    global $USER, $DB;
+
+    $params = array();
+    $extrajoins = '';
+    $extrawhere = '';
+    if (!is_siteadmin()) {
+        // Admins are allowed to view any role.
+        // Others are subject to the additional constraint that the view role must be allowed by
+        // 'role_allow_view' for some role they have assigned in this context or any parent.
+        $parents = $context->get_parent_context_ids(true);
+        $contexts = implode(',' , $parents);
+
+        $extrajoins = "JOIN {role_allow_view} ras ON ras.allowview = rc.roleid
         JOIN {role_assignments} ra ON ra.roleid = ras.roleid";
         $extrawhere = "WHERE ra.userid = :userid AND ra.contextid IN ($contexts)";
         $params['userid'] = $USER->id;
