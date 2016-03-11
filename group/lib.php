@@ -955,6 +955,7 @@ function groups_calculate_role_people($rs, $context) {
     }
 
     $allroles = role_fix_names(get_all_roles($context), $context);
+    $visibleroles = get_viewable_roles($context);
 
     // Array of all involved roles
     $roles = array();
@@ -1011,6 +1012,11 @@ function groups_calculate_role_people($rs, $context) {
     $roledata->users = array();
     $roles[0] = $roledata;
 
+    $roledata = new stdClass();
+    $roledata->name = get_string('otherrole','role');
+    $roledata->users = array();
+    $roles[-1] = $roledata;
+
     // Now we rearrange the data to store users by role
     foreach ($users as $userid=>$userdata) {
         $rolecount = count($userdata->roles);
@@ -1021,7 +1027,12 @@ function groups_calculate_role_people($rs, $context) {
             $roleid = '*';
         } else {
             $userrole = reset($userdata->roles);
-            $roleid = $userrole->id;
+
+            if (key_exists($userrole->id, $visibleroles)) {
+                $roleid = $userrole->id;
+            } else {
+                $roleid = -1;
+            }
         }
         $roles[$roleid]->users[$userid] = $userdata;
     }
