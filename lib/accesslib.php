@@ -2604,7 +2604,7 @@ function get_user_roles_in_course($userid, $courseid) {
     $rolestring = '';
 
     if ($roles = $DB->get_records_sql($sql, $params)) {
-        $viewableroles = get_viewable_roles($context);
+        $viewableroles = get_viewable_roles($context, $userid);
 
         $rolenames = array();
         foreach ($roles as $roleid => $unused) {
@@ -2895,7 +2895,7 @@ function allow_switch($fromroleid, $targetroleid) {
  * @param int $targetroleid target roleid
  * @return void
  */
-function allow_view_role($fromroleid, $targetroleid) {
+function allow_view($fromroleid, $targetroleid) {
     global $DB;
 
     $record = new stdClass();
@@ -3048,10 +3048,15 @@ function get_switchable_roles(context $context) {
  * Gets a list of roles that this user can view in a context
  *
  * @param context $context a context.
+ * @param int $userid id of user.
  * @return array an array $roleid => $rolename.
  */
-function get_viewable_roles(context $context) {
+function get_viewable_roles(context $context, $userid = null) {
     global $USER, $DB;
+
+    if ($userid == null) {
+        $userid = $USER->id;
+    }
 
     $params = array();
     $extrajoins = '';
@@ -3060,13 +3065,15 @@ function get_viewable_roles(context $context) {
         // Admins are allowed to view any role.
         // Others are subject to the additional constraint that the view role must be allowed by
         // 'role_allow_view' for some role they have assigned in this context or any parent.
-        $parents = $context->get_parent_context_ids(true);
-        $contexts = implode(',' , $parents);
+        $contexts = $context->get_parent_context_ids(true);
+        list($insql, $inparams) = $DB->get_in_or_equal($contexts, SQL_PARAMS_NAMED);
 
         $extrajoins = "JOIN {role_allow_view} ras ON ras.allowview = rc.roleid
-        JOIN {role_assignments} ra ON ra.roleid = ras.roleid";
-        $extrawhere = "WHERE ra.userid = :userid AND ra.contextid IN ($contexts)";
-        $params['userid'] = $USER->id;
+                       JOIN {role_assignments} ra ON ra.roleid = ras.roleid";
+        $extrawhere = "WHERE ra.userid = :userid AND ra.contextid $insql";
+
+        $params += $inparams;
+        $params['userid'] = $userid;
     }
 
     if ($coursecontext = $context->get_course_context(false)) {

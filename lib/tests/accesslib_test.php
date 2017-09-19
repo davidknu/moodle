@@ -1051,7 +1051,7 @@ class core_accesslib_testcase extends advanced_testcase {
         $student = $DB->get_record('role', array('shortname'=>'student'), '*', MUST_EXIST);
 
         $this->assertFalse($DB->record_exists('role_allow_view', array('roleid'=>$otherid, 'allowview'=>$student->id)));
-        allow_view_role($otherid, $student->id);
+        allow_view($otherid, $student->id);
         $this->assertTrue($DB->record_exists('role_allow_view', array('roleid'=>$otherid, 'allowview'=>$student->id)));
 
         // Test event trigger.
@@ -1329,7 +1329,7 @@ class core_accesslib_testcase extends advanced_testcase {
     /**
      * Test getting of all overridable roles.
      */
-    public function test_get_viewable_roles() {
+    public function test_get_viewable_roles_course() {
         global $DB;
 
         $this->resetAfterTest();
@@ -1342,7 +1342,7 @@ class core_accesslib_testcase extends advanced_testcase {
         role_assign($teacherrole->id, $teacher->id, $coursecontext);
 
         $studentrole = $DB->get_record('role', array('shortname'=>'student'), '*', MUST_EXIST);
-        $studentrolerename = (object)array('roleid'=>$studentrole->id, 'name'=>'Učitel', 'contextid'=>$coursecontext->id);
+        $studentrolerename = (object)array('roleid'=>$studentrole->id, 'name'=>'Učitel', 'contextid' => $coursecontext->id);
         $DB->insert_record('role_names', $studentrolerename);
 
         // By default teacher can see student.
@@ -1355,10 +1355,43 @@ class core_accesslib_testcase extends advanced_testcase {
         // Teacher can no longer see student role.
         $this->assertNotContains($studentrolerename->name, array_values($viewableroles));
         // Allow again teacher to view student.
-        allow_view_role($teacherrole->id, $studentrole->id);
+        allow_view($teacherrole->id, $studentrole->id);
         // Teacher can now see student role.
         $viewableroles = get_viewable_roles($coursecontext);
         $this->assertContains($studentrolerename->name, array_values($viewableroles));
+    }
+
+    /**
+     * Test getting of all overridable roles.
+     */
+    public function test_get_viewable_roles_system() {
+        global $DB;
+
+        $this->resetAfterTest();
+
+        $context = context_system::instance();
+
+        $teacherrole = $DB->get_record('role', array('shortname'=>'editingteacher'), '*', MUST_EXIST);
+        $teacher = $this->getDataGenerator()->create_user();
+        role_assign($teacherrole->id, $teacher->id, $context);
+
+        $studentrole = $DB->get_record('role', array('shortname'=>'student'), '*', MUST_EXIST);
+        $studentrolename = role_get_name($studentrole, $context);
+
+        // By default teacher can see student.
+        $this->setUser($teacher);
+        $viewableroles = get_viewable_roles($context);
+        $this->assertContains($studentrolename, array_values($viewableroles));
+        // Remove view permission.
+        $DB->delete_records('role_allow_view', array('roleid' => $teacherrole->id, 'allowview' => $studentrole->id));
+        $viewableroles = get_viewable_roles($context);
+        // Teacher can no longer see student role.
+        $this->assertNotContains($studentrolename, array_values($viewableroles));
+        // Allow again teacher to view student.
+        allow_view($teacherrole->id, $studentrole->id);
+        // Teacher can now see student role.
+        $viewableroles = get_viewable_roles($context);
+        $this->assertContains($studentrolename, array_values($viewableroles));
     }
 
     /**

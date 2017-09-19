@@ -2820,12 +2820,15 @@ function xmldb_main_upgrade($oldversion) {
             $dbman->add_index($table, $index);
         }
 
-        $roles = get_all_roles();
+        $roles = $DB->get_records('role', array(), 'sortorder ASC');
 
         $DB->delete_records('role_allow_view');
         foreach ($roles as $role) {
             foreach ($roles as $allowedrole) {
-                allow_view_role($role->id, $allowedrole->id);
+                $record = new stdClass();
+                $record->roleid      = $role->id;
+                $record->allowview = $allowedrole->id;
+                $DB->insert_record('role_allow_view', $record);
             }
         }
 

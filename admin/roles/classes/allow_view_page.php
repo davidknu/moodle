@@ -38,29 +38,13 @@ class core_role_allow_view_page extends core_role_allow_role_page {
         parent::__construct('role_allow_view', 'allowview');
     }
 
-    /**
-     * Load required data.
-     */
-    protected function load_required_roles() {
-        global $DB;
-        parent::load_required_roles();
-        $this->allowedtargetroles = $DB->get_records_menu('role', null, 'id');
-    }
 
     /**
      * @param int $fromroleid
      * @param int $targetroleid
      */
     protected function set_allow($fromroleid, $targetroleid) {
-        allow_view_role($fromroleid, $targetroleid);
-    }
-
-    /**
-     * @param int $targetroleid
-     * @return bool
-     */
-    protected function is_allowed_target($targetroleid) {
-        return isset($this->allowedtargetroles[$targetroleid]);
+        allow_view($fromroleid, $targetroleid);
     }
 
     /**

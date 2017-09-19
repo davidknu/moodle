@@ -18,8 +18,8 @@
  * Role allow view updated event.
  *
  * @package    core
- * @since      Moodle 2.6
- * @copyright  2013 Rajesh Taneja <rajesh@moodle.com>
+ * @since      Moodle 3.4
+ * @copyright  2017 Andrew Hancox <andrewdchancox@googlemail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
