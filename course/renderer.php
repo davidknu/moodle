@@ -1248,10 +1248,11 @@ class core_course_renderer extends plugin_renderer_base {
         // display course contacts. See course_in_list::get_course_contacts()
         if ($course->has_course_contacts()) {
             $content .= html_writer::start_tag('ul', array('class' => 'teachers'));
-            foreach ($course->get_course_contacts() as $userid => $coursecontact) {
+            $coursecontactduplicates = get_config('core', 'coursecontactduplicates');
+            foreach ($course->get_course_contacts($coursecontactduplicates) as $coursecontact) {
                 $name = $coursecontact['rolename'].': '.
                         html_writer::link(new moodle_url('/user/view.php',
-                                array('id' => $userid, 'course' => SITEID)),
+                                array('id' => $coursecontact['user']->id, 'course' => SITEID)),
                             $coursecontact['username']);
                 $content .= html_writer::tag('li', $name);
             }

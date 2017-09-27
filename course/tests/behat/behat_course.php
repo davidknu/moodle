@@ -1879,4 +1879,117 @@ class behat_course extends behat_base {
         $xpath = "//div[contains(@class,'block')]//li[p/*[string(.)=$coursestr or string(.)=$mycoursestr]]";
         $this->execute('behat_general::i_click_on_in_the', [get_string('participants'), 'link', $xpath, 'xpath_element']);
     }
+
+    /**
+     * Check that one teacher appears before another in the course contacts.
+     *
+     * @Given /^I should see teacher "(?P<pteacher_string>(?:[^"]|\\")*)" before "(?P<fteacher_string>(?:[^"]|\\")*)"$/
+     *
+     * @param string $pteacher The first teacher to find
+     * @param string $fteacher The second teacher to find (should be after the first teacher)
+     *
+     * @throws ExpectationException
+     */
+    public function i_should_see_teacher_before($pteacher, $fteacher) {
+        $xpath = "//ul[contains(@class,'teachers')]//li//a[text()='{$pteacher}']/ancestor::li//following::a[text()='{$fteacher}']";
+        $msg = "Teacher {$pteacher} does not appear before Teacher {$fteacher}";
+        if (!$this->getSession()->getDriver()->find($xpath)) {
+            throw new ExpectationException($msg, $this->getSession());
+        }
+    }
+
+    /**
+     * Check that one teacher oes not appears after another in the course contacts.
+     *
+     * @Given /^I should not see teacher "(?P<fteacher_string>(?:[^"]|\\")*)" after "(?P<pteacher_string>(?:[^"]|\\")*)"$/
+     *
+     * @param string $fteacher The teacher that should not be found (after the other teacher)
+     * @param string $pteacher The teacher after who the other should not be found (this teacher must be found!)
+     *
+     * @throws ExpectationException
+     */
+    public function i_should_not_see_teacher_after($fteacher, $pteacher) {
+        $xpathliteral = behat_context_helper::escape($pteacher);
+        $xpath = "/descendant-or-self::*[contains(., $xpathliteral)]" .
+            "[count(descendant::*[contains(., $xpathliteral)]) = 0]";
+        try {
+            $nodes = $this->find_all('xpath', $xpath);
+        } catch (ElementNotFoundException $e) {
+            throw new ExpectationException('"' . $pteacher . '" text was not found in the page', $this->getSession());
+        }
+        $xpath = "//ul[contains(@class,'teachers')]//li//a[text()='{$pteacher}']/ancestor::li//following::a[text()='{$fteacher}']";
+        $msg = "Teacher {$fteacher} appears after Teacher {$pteacher}";
+        if ($this->getSession()->getDriver()->find($xpath)) {
+            throw new ExpectationException($msg, $this->getSession());
+        }
+    }
+
+    /**
+     * Moves up the specified role.
+     *
+     * @Given /^I move up role "(?P<role_string>(?:[^"]|\\")*)"$/
+     * @param String $role
+     */
+    public function i_move_up_role($role) {
+        global $DB;
+
+        $roledb = $DB->get_record('role', array('shortname' => $role), 'id, sortorder', MUST_EXIST);
+
+        $query = "SELECT id, sortorder FROM {role} WHERE sortorder < ".$roledb->sortorder." ORDER BY sortorder DESC";
+        $previousroles = $DB->get_records_sql($query, null, 0, 1);
+
+        foreach ($previousroles as $id => $previousrole) {
+
+            $sum = $roledb->sortorder + $previousrole->sortorder;
+            list($insql, $inparams) = $DB->get_in_or_equal(array($roledb->id, $previousrole->id));
+
+            try {
+                $t = $DB->start_delegated_transaction();
+                $DB->update_record('role', array('id' => $previousrole->id, 'sortorder' => -$previousrole->sortorder));
+                $DB->update_record('role', array('id' => $roledb->id, 'sortorder' => $previousrole->sortorder));
+                $DB->update_record('role', array('id' => $previousrole->id, 'sortorder' => $roledb->sortorder));
+                $DB->commit_delegated_transaction($t);
+            } catch (dml_write_exception $de) {
+                throw new ExpectationException($de->getMessage()."\n\n".$de->debuginfo, $this->getSession());
+            }
+            $roledb = $DB->get_record('role', array('shortname' => $role), 'id, sortorder', MUST_EXIST);
+            $query = "SELECT id, sortorder FROM {role} WHERE sortorder < ".$roledb->sortorder." ORDER BY sortorder DESC";
+            $previousroles2 = $DB->get_records_sql($query, null, 0, 1);
+            return;
+        }
+    }
+
+    /**
+     * Moves down the specified role, this step only works with Javascript disabled. Editing mode should be on.
+     *
+     * @Given /^I move down role "(?P<role_string>(?:[^"]|\\")*)"$/
+     * @param String $role
+     */
+    public function i_move_down_role($role) {
+        global $DB;
+
+        $roledb = $DB->get_record('role', array('shortname' => $role), 'id, sortorder', MUST_EXIST);
+
+        $query = "SELECT id, sortorder FROM {role} WHERE sortorder > " . $roledb->sortorder . " ORDER BY sortorder ASC";
+        $previousroles = $DB->get_records_sql($query, null, 0, 1);
+
+        foreach ($previousroles as $id => $previousrole) {
+            $oldsortorder = $roledb->sortorder;
+            $roledb->sortorder = $previousrole->sortorder;
+            $previousrole->sortorder = $oldsortorder;
+            try {
+                $t = $DB->start_delegated_transaction();
+                $DB->update_record('role', array('id' => $previousrole->id, 'sortorder' => -$previousrole->sortorder));
+                $DB->update_record('role', array('id' => $roledb->id, 'sortorder' => $previousrole->sortorder));
+                $DB->update_record('role', array('id' => $previousrole->id, 'sortorder' => $roledb->sortorder));
+                $DB->commit_delegated_transaction($t);
+            } catch (dml_write_exception $de) {
+                throw new ExpectationException($de->getMessage()."\n\n".$de->debuginfo, $this->getSession());
+            }
+
+            break;
+        }
+
+    }
+
 }

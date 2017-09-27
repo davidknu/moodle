@@ -2918,7 +2918,7 @@ class course_in_list implements IteratorAggregate {
      *
      * @return array
      */
-    public function get_course_contacts() {
+    public function get_course_contacts($showduplicates = false) {
         global $CFG;
         if (empty($CFG->coursecontact)) {
             // No roles are configured to be displayed as course contacts.
@@ -2936,25 +2936,55 @@ class course_in_list implements IteratorAggregate {
 
             // Build return array with full roles names (for this course context) and users names.
             $canviewfullnames = has_capability('moodle/site:viewfullnames', $context);
-            foreach ($this->record->managers as $ruser) {
-                if (isset($this->coursecontacts[$ruser->id])) {
-                    // Only display a user once with the highest sortorder role.
-                    continue;
-                }
-                $user = new stdClass();
-                $user = username_load_fields_from_object($user, $ruser, null, array('id', 'username'));
-                $role = new stdClass();
-                $role->id = $ruser->roleid;
-                $role->name = $ruser->rolename;
-                $role->shortname = $ruser->roleshortname;
-                $role->coursealias = $ruser->rolecoursealias;
 
-                $this->coursecontacts[$user->id] = array(
-                    'user' => $user,
-                    'role' => $role,
-                    'rolename' => role_get_name($role, $context, ROLENAME_ALIAS),
-                    'username' => fullname($user, $canviewfullnames)
-                );
+            if ($showduplicates) {
+                $userroles = array();
+                foreach ($this->record->managers as $ruser) {
+                    if (isset($userroles[$ruser->id][$ruser->roleid])) {
+                        // Only display a user once per role.
+                        // Otherwise user can be listed twice with the same role, e.g., if a user has role teacher in Category1 and
+                        // is enroled as teacher in a course of this category.
+                        continue;
+                    }
+                    $userroles[$ruser->id][$ruser->roleid] = true;
+
+                    $user = new stdClass();
+                    $user = username_load_fields_from_object($user, $ruser, null, array('id', 'username'));
+                    $role = new stdClass();
+                    $role->id = $ruser->roleid;
+                    $role->name = $ruser->rolename;
+                    $role->shortname = $ruser->roleshortname;
+                    $role->coursealias = $ruser->rolecoursealias;
+
+                    $this->coursecontacts[] = array(
+                        'user' => $user,
+                        'role' => $role,
+                        'rolename' => role_get_name($role, $context, ROLENAME_ALIAS),
+                        'username' => fullname($user, $canviewfullnames)
+                    );
+                }
+            } else {
+                foreach ($this->record->managers as $ruser) {
+                    if (isset($this->coursecontacts[$ruser->id])) {
+                        // Only display a user once with the highest sortorder role.
+                        continue;
+                    }
+
+                    $user = new stdClass();
+                    $user = username_load_fields_from_object($user, $ruser, null, array('id', 'username'));
+                    $role = new stdClass();
+                    $role->id = $ruser->roleid;
+                    $role->name = $ruser->rolename;
+                    $role->shortname = $ruser->roleshortname;
+                    $role->coursealias = $ruser->rolecoursealias;
+
+                    $this->coursecontacts[$ruser->id] = array(
+                        'user'     => $user,
+                        'role'     => $role,
+                        'rolename' => role_get_name($role, $context, ROLENAME_ALIAS),
+                        'username' => fullname($user, $canviewfullnames)
+                    );
+                }
             }
         }
         return $this->coursecontacts;
