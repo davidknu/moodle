@@ -1013,7 +1013,7 @@ function groups_calculate_role_people($rs, $context) {
     $roles[0] = $roledata;
 
     $roledata = new stdClass();
-    $roledata->name = get_string('otherrole','role');
+    $roledata->name = get_string('novisibleroles','role');
     $roledata->users = array();
     $roles[-1] = $roledata;
 
