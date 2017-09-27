@@ -3068,7 +3068,7 @@ function get_viewable_roles(context $context, $userid = null) {
         $contexts = $context->get_parent_context_ids(true);
         list($insql, $inparams) = $DB->get_in_or_equal($contexts, SQL_PARAMS_NAMED);
 
-        $extrajoins = "JOIN {role_allow_view} ras ON ras.allowview = rc.roleid
+        $extrajoins = "JOIN {role_allow_view} ras ON ras.allowview = r.id
                        JOIN {role_assignments} ra ON ra.roleid = ras.roleid";
         $extrawhere = "WHERE ra.userid = :userid AND ra.contextid $insql";
 
@@ -3085,12 +3085,10 @@ function get_viewable_roles(context $context, $userid = null) {
 
     $query = "
         SELECT r.id, r.name, r.shortname, rn.name AS coursealias
-          FROM (SELECT DISTINCT rc.roleid
-                  FROM {role_capabilities} rc
-                  $extrajoins
-                  $extrawhere) idlist
-          JOIN {role} r ON r.id = idlist.roleid
+          FROM {role} r
+          $extrajoins
      LEFT JOIN {role_names} rn ON (rn.contextid = :coursecontext AND rn.roleid = r.id)
+          $extrawhere
       ORDER BY r.sortorder";
     $roles = $DB->get_records_sql($query, $params);
 
