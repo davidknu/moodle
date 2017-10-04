@@ -1012,27 +1012,18 @@ function groups_calculate_role_people($rs, $context) {
     $roledata->users = array();
     $roles[0] = $roledata;
 
-    $roledata = new stdClass();
-    $roledata->name = get_string('novisibleroles','role');
-    $roledata->users = array();
-    $roles[-1] = $roledata;
-
     // Now we rearrange the data to store users by role
     foreach ($users as $userid=>$userdata) {
-        $rolecount = count($userdata->roles);
+        $visibleuserroles = array_intersect_key($userdata->roles, $visibleroles);
+        $rolecount = count($visibleuserroles);
         if ($rolecount == 0) {
             // does not have any roles
             $roleid = 0;
         } else if($rolecount > 1) {
             $roleid = '*';
         } else {
-            $userrole = reset($userdata->roles);
-
-            if (key_exists($userrole->id, $visibleroles)) {
-                $roleid = $userrole->id;
-            } else {
-                $roleid = -1;
-            }
+            $userrole = reset($visibleuserroles);
+            $roleid = $userrole->id;
         }
         $roles[$roleid]->users[$userid] = $userdata;
     }

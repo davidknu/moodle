@@ -3089,6 +3089,7 @@ function get_viewable_roles(context $context, $userid = null) {
           $extrajoins
      LEFT JOIN {role_names} rn ON (rn.contextid = :coursecontext AND rn.roleid = r.id)
           $extrawhere
+      GROUP BY r.id, r.name, r.shortname, rn.name
       ORDER BY r.sortorder";
     $roles = $DB->get_records_sql($query, $params);
 
