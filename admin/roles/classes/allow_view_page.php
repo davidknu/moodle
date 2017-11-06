@@ -26,6 +26,10 @@ defined('MOODLE_INTERNAL') || die();
 
 /**
  * Subclass of role_allow_role_page for the Allow views tab.
+ *
+ * @package    core_role
+ * @copyright  2016 onwards Andrew Hancox <andrewdchancox@googlemail.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class core_role_allow_view_page extends core_role_allow_role_page {
     /** @var array */
@@ -40,6 +44,7 @@ class core_role_allow_view_page extends core_role_allow_role_page {
 
 
     /**
+     * Allow from role to view target role.
      * @param int $fromroleid
      * @param int $targetroleid
      */
@@ -48,6 +53,7 @@ class core_role_allow_view_page extends core_role_allow_role_page {
     }
 
     /**
+     * Get tool tip for cell.
      * @param $fromrole
      * @param $targetrole
      * @return string
@@ -61,6 +67,7 @@ class core_role_allow_view_page extends core_role_allow_role_page {
     }
 
     /**
+     * Get intro text for role allow view page.
      * @return string
      * @throws \coding_exception
      */

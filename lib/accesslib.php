@@ -2609,7 +2609,8 @@ function get_user_roles_in_course($userid, $courseid) {
         $rolenames = array();
         foreach ($roles as $roleid => $unused) {
             if (isset($viewableroles[$roleid])) {
-                $rolenames[] = '<a href="' . $CFG->wwwroot . '/user/index.php?contextid=' . $context->id . '&amp;roleid=' . $roleid . '">' . $viewableroles[$roleid] . '</a>';
+                $url = new moodle_url('/user/index.php', ['contextid' => $context->id, 'roleid' => $roleid]);
+                $rolenames[] = '<a href="' . $url . '">' . $viewableroles[$roleid] . '</a>';
             }
         }
         $rolestring = implode(',', $rolenames);
@@ -3079,7 +3080,7 @@ function get_viewable_roles(context $context, $userid = null) {
     if ($coursecontext = $context->get_course_context(false)) {
         $params['coursecontext'] = $coursecontext->id;
     } else {
-        $params['coursecontext'] = 0; // no course aliases
+        $params['coursecontext'] = 0; // No course aliases.
         $coursecontext = null;
     }
 

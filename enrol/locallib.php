@@ -1071,7 +1071,7 @@ class course_enrolment_manager {
                 if (isset($visibleroles[$rid])) {
                     $label = $visibleroles[$rid];
                 } else {
-                    $label = get_string('novisibleroles','role');
+                    $label = get_string('novisibleroles', 'role');
                     $unchangeable = true;
                 }
 

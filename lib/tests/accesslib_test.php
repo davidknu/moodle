@@ -1050,9 +1050,9 @@ class core_accesslib_testcase extends advanced_testcase {
         $otherid = create_role('Other role', 'other', 'Some other role', '');
         $student = $DB->get_record('role', array('shortname'=>'student'), '*', MUST_EXIST);
 
-        $this->assertFalse($DB->record_exists('role_allow_view', array('roleid'=>$otherid, 'allowview'=>$student->id)));
+        $this->assertFalse($DB->record_exists('role_allow_view', array('roleid' => $otherid, 'allowview' => $student->id)));
         allow_view($otherid, $student->id);
-        $this->assertTrue($DB->record_exists('role_allow_view', array('roleid'=>$otherid, 'allowview'=>$student->id)));
+        $this->assertTrue($DB->record_exists('role_allow_view', array('roleid' => $otherid, 'allowview' => $student->id)));
 
         // Test event trigger.
         $allowroleassignevent = \core\event\role_allow_view_updated::create(array('context' => context_system::instance()));
@@ -1337,12 +1337,12 @@ class core_accesslib_testcase extends advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $coursecontext = context_course::instance($course->id);
 
-        $teacherrole = $DB->get_record('role', array('shortname'=>'editingteacher'), '*', MUST_EXIST);
+        $teacherrole = $DB->get_record('role', array('shortname' => 'editingteacher'), '*', MUST_EXIST);
         $teacher = $this->getDataGenerator()->create_user();
         role_assign($teacherrole->id, $teacher->id, $coursecontext);
 
-        $studentrole = $DB->get_record('role', array('shortname'=>'student'), '*', MUST_EXIST);
-        $studentrolerename = (object)array('roleid'=>$studentrole->id, 'name'=>'Učitel', 'contextid' => $coursecontext->id);
+        $studentrole = $DB->get_record('role', array('shortname' => 'student'), '*', MUST_EXIST);
+        $studentrolerename = (object) array('roleid' => $studentrole->id, 'name' => 'Učitel', 'contextid' => $coursecontext->id);
         $DB->insert_record('role_names', $studentrolerename);
 
         // By default teacher can see student.
@@ -1371,11 +1371,11 @@ class core_accesslib_testcase extends advanced_testcase {
 
         $context = context_system::instance();
 
-        $teacherrole = $DB->get_record('role', array('shortname'=>'editingteacher'), '*', MUST_EXIST);
+        $teacherrole = $DB->get_record('role', array('shortname' => 'editingteacher'), '*', MUST_EXIST);
         $teacher = $this->getDataGenerator()->create_user();
         role_assign($teacherrole->id, $teacher->id, $context);
 
-        $studentrole = $DB->get_record('role', array('shortname'=>'student'), '*', MUST_EXIST);
+        $studentrole = $DB->get_record('role', array('shortname' => 'student'), '*', MUST_EXIST);
         $studentrolename = role_get_name($studentrole, $context);
 
         // By default teacher can see student.
