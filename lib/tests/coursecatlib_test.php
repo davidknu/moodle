@@ -779,7 +779,11 @@ class core_coursecatlib_testcase extends advanced_testcase {
             foreach (array(1, 2) as $courseid) {
                 $tmp = array();
                 foreach ($allcourses[$course[$catid][$courseid]]->get_course_contacts(true) as $contact) {
-                    $tmp[] = $contact['rolename']. ': '. $contact['username'];
+                    $rolenames = array_map(function ($role) {
+                        return $role->displayname;
+                    }, $contact['roles']);
+                    $tmp[] = implode(", ", $rolenames). ': '.
+                        $contact['username'];
                 }
                 $contacts[$catid][$courseid] = join(', ', $tmp);
             }
@@ -787,20 +791,20 @@ class core_coursecatlib_testcase extends advanced_testcase {
 
         // Assert:
         // Course21: user2 is enrolled as manager. [Expected] Manager: F2 L2, Teacher: F2 L2.
-        $this->assertSame('Manager: F2 L2, Teacher: F2 L2', $contacts[2][1]);
+        $this->assertSame('Manager, Teacher: F2 L2', $contacts[2][1]);
         // Course22: user2 is enrolled as student. [Expected] Teacher: F2 L2.
         $this->assertSame('Teacher: F2 L2', $contacts[2][2]);
         // Course41: user4 is enrolled as teacher, user5 is enrolled as manager. [Expected] Manager: F5 L5, Teacher: F4 L4.
         $this->assertSame('Manager: F5 L5, Teacher: F4 L4', $contacts[4][1]);
         // Course42: user2 is enrolled as teacher. [Expected] Manager: F2 L2, Teacher: F2 L2.
-        $this->assertSame('Manager: F2 L2, Teacher: F2 L2', $contacts[4][2]);
+        $this->assertSame('Manager, Teacher: F2 L2', $contacts[4][2]);
         // Course31: user3 is enrolled as student. [Expected] Manager: F3 L3.
         $this->assertSame('Manager: F3 L3', $contacts[3][1]);
         // Course32: nobody is enrolled. [Expected] (nothing).
         $this->assertSame('', $contacts[3][2]);
         // Course11: user1 is enrolled as teacher and user4 is enrolled as teacher and has manager role. [Expected] Manager: F4 L4,
         // Teacher: F1 L1, Teacher: F4 L4.
-        $this->assertSame('Manager: F4 L4, Teacher: F1 L1, Teacher: F4 L4', $contacts[1][1]);
+        $this->assertSame('Manager, Teacher: F4 L4, Teacher: F1 L1', $contacts[1][1]);
         // Course12: user1 has teacher role, but is not enrolled, as well as user4 is enrolled as teacher, but user4's enrolment is
         // not active. [Expected] (nothing).
         $this->assertSame('', $contacts[1][2]);

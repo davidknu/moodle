@@ -1,4 +1,4 @@
-@core @core_course @core_coursecontacts
+@core @core_course
 Feature: Test we can see coursecontacts.
   As a student I need to see coursecontacts
   As a admin I need to test we can resort coursecontacts.

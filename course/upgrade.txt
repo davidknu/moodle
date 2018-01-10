@@ -1,6 +1,11 @@
 This files describes API changes in /course/*,
 information provided here is intended especially for developers.
 
+=== 3.5 ===
+
+ * External function core_course_external::get_course_public_information now returns the roles and the primary role of course
+   contacts.
+
 === 3.3 ===
 
  * External function core_course_external::get_courses_by_field now returns the course filters list and status.

@@ -1939,28 +1939,14 @@ class behat_course extends behat_base {
         $previousroles = $DB->get_records_sql($query, null, 0, 1);
 
         foreach ($previousroles as $id => $previousrole) {
+            switch_roles($previousrole, $role);
 
-            $sum = $roledb->sortorder + $previousrole->sortorder;
-            list($insql, $inparams) = $DB->get_in_or_equal(array($roledb->id, $previousrole->id));
-
-            try {
-                $t = $DB->start_delegated_transaction();
-                $DB->update_record('role', array('id' => $previousrole->id, 'sortorder' => -$previousrole->sortorder));
-                $DB->update_record('role', array('id' => $roledb->id, 'sortorder' => $previousrole->sortorder));
-                $DB->update_record('role', array('id' => $previousrole->id, 'sortorder' => $roledb->sortorder));
-                $DB->commit_delegated_transaction($t);
-            } catch (dml_write_exception $de) {
-                throw new ExpectationException($de->getMessage()."\n\n".$de->debuginfo, $this->getSession());
-            }
-            $roledb = $DB->get_record('role', array('shortname' => $role), 'id, sortorder', MUST_EXIST);
-            $query = "SELECT id, sortorder FROM {role} WHERE sortorder < ".$roledb->sortorder." ORDER BY sortorder DESC";
-            $previousroles2 = $DB->get_records_sql($query, null, 0, 1);
-            return;
+            break;
         }
     }
 
     /**
-     * Moves down the specified role, this step only works with Javascript disabled. Editing mode should be on.
+     * Moves down the specified role.
      *
      * @Given /^I move down role "(?P<role_string>(?:[^"]|\\")*)"$/
      * @param String $role
@@ -1974,22 +1960,10 @@ class behat_course extends behat_base {
         $previousroles = $DB->get_records_sql($query, null, 0, 1);
 
         foreach ($previousroles as $id => $previousrole) {
-            $oldsortorder = $roledb->sortorder;
-            $roledb->sortorder = $previousrole->sortorder;
-            $previousrole->sortorder = $oldsortorder;
-            try {
-                $t = $DB->start_delegated_transaction();
-                $DB->update_record('role', array('id' => $previousrole->id, 'sortorder' => -$previousrole->sortorder));
-                $DB->update_record('role', array('id' => $roledb->id, 'sortorder' => $previousrole->sortorder));
-                $DB->update_record('role', array('id' => $previousrole->id, 'sortorder' => $roledb->sortorder));
-                $DB->commit_delegated_transaction($t);
-            } catch (dml_write_exception $de) {
-                throw new ExpectationException($de->getMessage()."\n\n".$de->debuginfo, $this->getSession());
-            }
+            switch_roles($previousrole, $role);
 
             break;
         }
-
     }
 
 }

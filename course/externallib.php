@@ -2252,7 +2252,12 @@ class core_course_external extends external_api {
         foreach ($course->get_course_contacts() as $contact) {
              $coursecontacts[] = array(
                 'id' => $contact['user']->id,
-                'fullname' => $contact['username']
+                'fullname' => $contact['username'],
+                'roles' => array_map(function($role){
+                        return array('id' => $role->id, 'name' => $role->displayname);
+                }, $contact['role']),
+                'role' => array('id' => $contact['role']->id, 'name' => $contact['role']->displayname),
+                'rolename' => $contact['rolename']
             );
         }
 
