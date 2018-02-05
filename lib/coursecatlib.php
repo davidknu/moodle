@@ -2918,7 +2918,7 @@ class course_in_list implements IteratorAggregate {
      *
      * @return array
      */
-    public function get_course_contacts($enableshowallcoursecontacts = true) {
+    public function get_course_contacts() {
         global $CFG;
         if (empty($CFG->coursecontact)) {
             // No roles are configured to be displayed as course contacts.
@@ -2941,7 +2941,7 @@ class course_in_list implements IteratorAggregate {
 
             foreach ($this->record->managers as $ruser) {
                 $processed = array_key_exists($ruser->id, $this->coursecontacts);
-                if (!$displayall && $processed && !$enableshowallcoursecontacts) {
+                if (!$displayall && $processed) {
                     continue;
                 }
 

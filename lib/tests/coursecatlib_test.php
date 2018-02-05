@@ -541,6 +541,9 @@ class core_coursecatlib_testcase extends advanced_testcase {
 
     public function test_course_contacts() {
         global $DB, $CFG;
+
+        set_config('showallcoursecontacts', false);
+
         $teacherrole = $DB->get_record('role', array('shortname'=>'editingteacher'));
         $managerrole = $DB->get_record('role', array('shortname'=>'manager'));
         $studentrole = $DB->get_record('role', array('shortname'=>'student'));
@@ -596,7 +599,7 @@ class core_coursecatlib_testcase extends advanced_testcase {
         // Nobody is enrolled now and course contacts are empty.
         $allcourses = coursecat::get(0)->get_courses(array('recursive' => true, 'coursecontacts' => true, 'sort' => array('idnumber' => 1)));
         foreach ($allcourses as $onecourse) {
-            $this->assertEmpty($onecourse->get_course_contacts(false));
+            $this->assertEmpty($onecourse->get_course_contacts());
         }
 
         // Cat1: user2 has teacher role.
@@ -633,7 +636,7 @@ class core_coursecatlib_testcase extends advanced_testcase {
         foreach (array(1, 2, 3, 4) as $catid) {
             foreach (array(1, 2) as $courseid) {
                 $tmp = array();
-                foreach ($allcourses[$course[$catid][$courseid]]->get_course_contacts(false) as $contact) {
+                foreach ($allcourses[$course[$catid][$courseid]]->get_course_contacts() as $contact) {
                     $tmp[] = $contact['rolename']. ': '. $contact['username'];
                 }
                 $contacts[$catid][$courseid] = join(', ', $tmp);
@@ -666,7 +669,7 @@ class core_coursecatlib_testcase extends advanced_testcase {
             'coursecontacts' => true,
             'sort' => array('idnumber' => 1))
         );
-        $contacts = $allcourses[$course[4][1]]->get_course_contacts(false);
+        $contacts = $allcourses[$course[4][1]]->get_course_contacts();
         $this->assertCount(1, $contacts);
         $contact = reset($contacts);
         $this->assertEquals('F5 L5', $contact['username']);
@@ -677,6 +680,12 @@ class core_coursecatlib_testcase extends advanced_testcase {
 
     public function test_course_contacts_with_duplicates() {
         global $DB, $CFG;
+
+        set_config('showallcoursecontacts', true);
+
+        $displayall = get_config('core', 'showallcoursecontacts');
+        $this->assertEquals(true, $displayall);
+
         $teacherrole = $DB->get_record('role', array('shortname' => 'editingteacher'));
         $managerrole = $DB->get_record('role', array('shortname' => 'manager'));
         $studentrole = $DB->get_record('role', array('shortname' => 'student'));
@@ -743,7 +752,7 @@ class core_coursecatlib_testcase extends advanced_testcase {
             'sort' => array('idnumber' => 1))
         );
         foreach ($allcourses as $onecourse) {
-            $this->assertEmpty($onecourse->get_course_contacts(true));
+            $this->assertEmpty($onecourse->get_course_contacts());
         }
 
         // Cat1: user2 has teacher role.
@@ -778,7 +787,7 @@ class core_coursecatlib_testcase extends advanced_testcase {
         foreach (array(1, 2, 3, 4) as $catid) {
             foreach (array(1, 2) as $courseid) {
                 $tmp = array();
-                foreach ($allcourses[$course[$catid][$courseid]]->get_course_contacts(true) as $contact) {
+                foreach ($allcourses[$course[$catid][$courseid]]->get_course_contacts() as $contact) {
                     $rolenames = array_map(function ($role) {
                         return $role->displayname;
                     }, $contact['roles']);
@@ -816,7 +825,7 @@ class core_coursecatlib_testcase extends advanced_testcase {
             'coursecontacts' => true,
             'sort' => array('idnumber' => 1)
         ));
-        $contacts = $allcourses[$course[4][1]]->get_course_contacts(true);
+        $contacts = $allcourses[$course[4][1]]->get_course_contacts();
         $this->assertCount(1, $contacts);
         $contact = reset($contacts);
         $this->assertEquals('F5 L5', $contact['username']);
